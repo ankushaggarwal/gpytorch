@@ -46,13 +46,10 @@ print(np.shape(I1)[0], 'protocols read')
 import math
 import torch
 
-#import gpytorch
-#instead import the local gpytorch repo
-import importlib.util
-spec = importlib.util.spec_from_file_location("gpytorch", "../../gpytorch/__init__.py")
-gpytorch = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(gpytorch)
-print(gpytorch.__file__)
+import sys
+from os.path import dirname, abspath
+sys.path.insert(0,dirname(dirname(dirname(abspath(__file__)))))
+import gpytorch
 
 class ExactGPModel(gpytorch.models.ExactGP):
     def __init__(self, train_x, train_y, likelihood):
@@ -68,6 +65,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
 #Convert the numpy arrays to torch tensors
 x_data2 = torch.tensor(lam1[:4].flatten())
 y_data2 = torch.tensor(s11[:4].flatten())
+y_data2 = y_data2 + torch.rand(len(y_data2))*0.01
 
 # initialize likelihood and model
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -119,6 +117,33 @@ def predict_model(test_x1):
     residual_stress = observed_pred.mean.detach().numpy()[0]
     return (observed_pred.mean.detach().numpy()[1:]-residual_stress, dydtest_x.numpy()[1:])
 
-#the above gives us the stresses and derivatives of the stresses at requested points. An example is:
-print(predict_model(np.linspace(min(x_data2), max(x_data2),30)))
+#the above gives us the mean stresses and derivatives of the mean stresses at requested points. An example is:
+#print(predict_model(np.linspace(min(x_data2), max(x_data2),30)))
+
+from matplotlib import pyplot as plt
+test_x1 = np.linspace(min(x_data2), max(x_data2),30)
+test_x1[0]=1.
+test_x = torch.tensor(test_x1,dtype=torch.float64,requires_grad=True)
+with gpytorch.settings.fast_pred_var():
+    observed_pred = (model(test_x))
+
+# Initialize plot
+f, ax = plt.subplots(1, 1, figsize=(10, 6))
+
+with torch.no_grad():
+    # Get upper and lower confidence bounds
+    lower, upper = observed_pred.confidence_region()
+    # Plot training data as black stars
+    ln1 = ax.plot(x_data2.numpy(), y_data2.numpy(), 'k*',markersize=2)
+    # Plot predictive means as blue line
+    ln2 = ax.plot(test_x.numpy(), observed_pred.mean.numpy(), 'b')
+    # Shade between the lower and upper confidence bounds
+    ln3 = ax.fill_between(test_x.numpy(), lower.numpy(), upper.numpy(), alpha=0.5)
+    ax.legend(['Observed Data', 'Mean', 'Confidence interval'])
+    for i in range(10):
+        plt.plot(test_x1,observed_pred.sample().detach().numpy(),'--')
+ax.set_ylabel('Stress')
+ax.set_xlabel('Strain')
+
+plt.show()
 

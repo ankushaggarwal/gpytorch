@@ -19,19 +19,25 @@ train_y2 = -torch.sin(train_x2) + 2*torch.cos(2*train_x2) + 0.05 * torch.randn(t
 train_x = torch.cat([train_x1 , train_x2])
 train_y = torch.cat([train_y1,train_y2])
 
-train_index = torch.tensor([True]*n1+[False]*n2)
+ndata,ndim = train_x.shape.numel(),1
+train_index = torch.empty(ndata,ndim+1,dtype=bool)
+train_index[:n1,0]=True
+train_index[:n1,1]=False
+train_index[n1:,0]=False
+train_index[n1:,1]=True
+
+#train_index = torch.tensor([True]*n1+[False]*n2)
 
 class GPModelWithDerivatives(gpytorch.models.ExactGP):
     def __init__(self, train_x, train_y, likelihood):
         super(GPModelWithDerivatives, self).__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
+        self.mean_module = gpytorch.means.ConstantMeanGrad()
         self.base_kernel = gpytorch.kernels.RBFKernelGrad()
         self.covar_module = gpytorch.kernels.ScaleKernel(self.base_kernel)
 
     def forward(self, x, index):
-        index = index.squeeze()
-        index = torch.stack((index,~index)).T.reshape(-1)
-        mean_x = self.mean_module(x)
+        index = index.reshape(-1)
+        mean_x = self.mean_module(x).reshape(-1)[index]
         full_kernel = self.covar_module(x)
         covar_x = full_kernel[..., index,:][...,:,index]
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
@@ -79,11 +85,10 @@ likelihood.eval()
 # Initialize plots
 f, (y1_ax, y2_ax) = plt.subplots(1, 2, figsize=(12, 6))
 
-n11,n22=200,200
-test_x1 = torch.linspace(lb, ub, n11)
-test_x2 = torch.linspace(lb, ub, n22)
-test_x = torch.cat([test_x1 , test_x2])
-test_index = torch.tensor([True]*n11+[False]*n22)
+n11=200
+test_x = torch.linspace(lb, ub, n11)
+test_index = torch.ones(test_x.shape[0],ndim+1,dtype=bool)
+#test_index = torch.tensor([True]*n11+[False]*n22)
 
 # Make predictions
 with torch.no_grad(), gpytorch.settings.max_cg_iterations(50):
@@ -94,18 +99,18 @@ with torch.no_grad(), gpytorch.settings.max_cg_iterations(50):
 # Plot training data as black stars
 y1_ax.plot(train_x[:n1].detach().numpy(), train_y[:n1].detach().numpy(), 'k*')
 # Predictive mean as blue line
-y1_ax.plot(test_x1.detach().numpy(), mean[:n11].detach().numpy(), 'b')
+y1_ax.plot(test_x.detach().numpy(), mean[::2].detach().numpy(), 'b')
 # Shade in confidence
-y1_ax.fill_between(test_x1.detach().numpy(), lower[:n11].detach().numpy(), upper[:n11].detach().numpy(), alpha=0.5)
+y1_ax.fill_between(test_x.detach().numpy(), lower[::2].detach().numpy(), upper[::2].detach().numpy(), alpha=0.5)
 y1_ax.legend(['Observed Values', 'Mean', 'Confidence'])
 y1_ax.set_title('Function values')
 
 # Plot training data as black stars
 y2_ax.plot(train_x[n1:].detach().numpy(), train_y[n1:].detach().numpy(), 'k*')
 # Predictive mean as blue line
-y2_ax.plot(test_x2.detach().numpy(), mean[n11:].detach().numpy(), 'b')
+y2_ax.plot(test_x.detach().numpy(), mean[1::2].detach().numpy(), 'b')
 # Shade in confidence
-y2_ax.fill_between(test_x2.detach().numpy(), lower[n11:].detach().numpy(), upper[n11:].detach().numpy(), alpha=0.5)
+y2_ax.fill_between(test_x.detach().numpy(), lower[1::2].detach().numpy(), upper[1::2].detach().numpy(), alpha=0.5)
 y2_ax.legend(['Observed Derivatives', 'Mean', 'Confidence'])
 y2_ax.set_title('Derivatives')
 

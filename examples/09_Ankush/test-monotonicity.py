@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 # Training data is 100 points in [0,1] inclusive regularly spaced
 train_x = torch.linspace(0, 1, 100)
 # True function is sin(2*pi*x) with Gaussian noise
-train_y = torch.sin(train_x * (0.7* math.pi)) + torch.randn(train_x.size()) * math.sqrt(0.04)
+train_y = torch.sin(train_x * (0.4* math.pi)) + torch.randn(train_x.size()) * math.sqrt(0.04)
 
 # We will use the simplest form of GP model, exact inference
 class ExactGPModel(gpytorch.models.ExactGP):

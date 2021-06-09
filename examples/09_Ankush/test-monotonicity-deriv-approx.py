@@ -55,7 +55,7 @@ model = GPModel()
 # this is for running the notebook in our testing framework
 import os
 smoke_test = ('CI' in os.environ)
-training_iter = 2 if smoke_test else 50
+training_iter = 2 if smoke_test else 200
 
 # Find optimal model hyperparameters
 model.train()
@@ -68,7 +68,8 @@ optimizer = torch.optim.Adam([
 ], lr=0.1)
 
 # "Loss" for GPs - the marginal log likelihood
-mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+#mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+mll = gpytorch.mlls.VariationalELBO(likelihood, model, num_data=train_y.size(0))
 
 #print(train_y)
 #output = model(train_x1,train_x2)

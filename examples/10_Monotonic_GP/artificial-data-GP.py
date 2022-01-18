@@ -437,6 +437,7 @@ if args.eval:
     ax = fig.add_axes([x0+0.*dx,y0+2.2*dy,x1,y1])
     data = dW2dI1p
     V=np.linspace(np.min(data),np.max(data),256)
+    V=np.linspace(-150,50,256)
     #CMAP=cm.get_cmap("plasma_r").copy()
     #CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
     CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap='seismic_r',norm=TwoSlopeNorm(0))
@@ -456,6 +457,7 @@ if args.eval:
     ax = fig.add_axes([x0+2*dx,y0+2.2*dy,x1,y1])
     data = dW2dI4p
     V=np.linspace(np.min(data),np.max(data),256)
+    V=np.linspace(-150,50,256)
     #CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
     CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap='seismic_r',norm=TwoSlopeNorm(0))
     #CS.cmap.set_under('white')
@@ -508,4 +510,4 @@ if args.eval:
     cbar.ax.tick_params(direction='out')
 
     ################ Save ##############
-    plt.savefig('test.pdf',bbox_inches='tight')
+    plt.savefig('test.png',bbox_inches='tight')

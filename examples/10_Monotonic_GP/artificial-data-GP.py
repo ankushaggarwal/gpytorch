@@ -433,12 +433,14 @@ if args.eval:
     cbar.ax.tick_params(direction='out')
 
     ################ d2W ##############
+    from matplotlib.colors import TwoSlopeNorm
     ax = fig.add_axes([x0+0.*dx,y0+2.2*dy,x1,y1])
     data = dW2dI1p
-    V=np.linspace(0,np.max(data),256)
-    CMAP=cm.get_cmap("plasma_r").copy()
-    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
-    CS.cmap.set_under('white')
+    V=np.linspace(np.min(data),np.max(data),256)
+    #CMAP=cm.get_cmap("plasma_r").copy()
+    #CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap='seismic_r',norm=TwoSlopeNorm(0))
+    #CS.cmap.set_under('white')
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
         c.set_edgecolor("face")
@@ -453,9 +455,10 @@ if args.eval:
 
     ax = fig.add_axes([x0+2*dx,y0+2.2*dy,x1,y1])
     data = dW2dI4p
-    V=np.linspace(0,np.max(data),256)
-    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
-    CS.cmap.set_under('white')
+    V=np.linspace(np.min(data),np.max(data),256)
+    #CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap='seismic_r',norm=TwoSlopeNorm(0))
+    #CS.cmap.set_under('white')
     # This is the fix for the white lines between contour levels
     for c in CS.collections:
         c.set_edgecolor("face")

@@ -189,7 +189,7 @@ train_y_w_2nd_derivs = torch.cat((train_y0,train_y_w_2nd_derivs))
 
 #add uniformly spaced points for enforcing convexity
 n1, n2 = 20, 20
-xv, yv = torch.meshgrid([torch.linspace(0, torch.max(train_x[:,0]), n1), torch.linspace(torch.min(train_x[:,1]), torch.max(train_x[:,1]), n2)])
+xv, yv = torch.meshgrid(torch.linspace(0, torch.max(train_x[:,0]), n1), torch.linspace(torch.min(train_x[:,1]), torch.max(train_x[:,1]), n2),indexing='xy')
 train_x2 = torch.stack([xv.reshape(n1*n2, 1), yv.reshape(n1*n2, 1)], -1).squeeze(1)
 ndata,ndim = train_x2.shape
 train_index2 = torch.zeros(ndata,2*ndim+1,dtype=bool)
@@ -288,7 +288,7 @@ if args.eval:
     likelihood.eval()
 
     n1, n2 = 50, 50
-    xv, yv = torch.meshgrid([torch.linspace(0, torch.max(train_x[:,0]), n1), torch.linspace(torch.min(train_x[:,1]), torch.max(train_x[:,1]), n2)])
+    xv, yv = torch.meshgrid(torch.linspace(0, torch.max(train_x[:,0]), n1), torch.linspace(torch.min(train_x[:,1]), torch.max(train_x[:,1]), n2),indexing='xy')
     test_x = torch.stack([xv.reshape(n1*n2, 1), yv.reshape(n1*n2, 1)], -1).squeeze(1)
     test_index = torch.ones(n1*n2,2*ndim+1,dtype=bool)
     predictions = model(test_x,x_index = test_index)

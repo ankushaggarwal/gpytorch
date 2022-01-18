@@ -197,8 +197,10 @@ train_index2[:,3:]=True
 train_y2 = torch.ones_like(train_x2).flatten()
 
 train_x_full = torch.vstack((train_x,train_x2))
-train_index_full =  torch.vstack((train_index_w_2nd_derivs,train_index2))
-train_y_full = torch.cat((train_y_w_2nd_derivs,train_y2))
+#train_index_full =  torch.vstack((train_index_w_2nd_derivs,train_index2))
+train_index_full =  torch.vstack((train_index,train_index2))
+#train_y_full = torch.cat((train_y_w_2nd_derivs,train_y2))
+train_y_full = torch.cat((train_y,train_y2))
 
 #################################################################################
 ################################ Create model etc.###############################

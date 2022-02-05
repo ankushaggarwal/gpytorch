@@ -26,6 +26,7 @@ class CompositeLikelihood(gpytorch.likelihoods._OneDimensionalLikelihood):
         self.register_buffer('nu',torch.Tensor([1.]))
         #self.nu = torch.nn.parameter.Parameter(torch.Tensor([1.]),requires_grad=False) #1.
         self.register_buffer('small_slope',torch.Tensor([0.]))
+        self.register_buffer('alpha',torch.Tensor([1.]))
         #self.small_slope = torch.nn.parameter.Parameter(torch.Tensor([0.]),requires_grad=False) #0.
 
     def set_indices(indices):
@@ -63,7 +64,7 @@ class CompositeLikelihood(gpytorch.likelihoods._OneDimensionalLikelihood):
                 if isinstance(l,gpytorch.likelihoods.GaussianLikelihood):
                     log_prob.append(l(f_samples[i]).log_prob(observ[i]))
                 elif isinstance(l,gpytorch.likelihoods.BernoulliLikelihood):
-                    log_prob.append(gpytorch.functions.log_normal_cdf(f_samples[i].add(self.small_slope[0]).mul(observ[i].mul(2).sub(1)).mul(self.nu[0]))) #.mul(2).sub(1) changes the Bernoulli observations to -1 and 1, so that p(Y=y|f)=\Phi(yf), see the BernoulliLikelihood) for details on this
+                    log_prob.append(self.alpha[0]*gpytorch.functions.log_normal_cdf(f_samples[i].add(self.small_slope[0]).mul(observ[i].mul(2).sub(1)).mul(self.nu[0]))) #.mul(2).sub(1) changes the Bernoulli observations to -1 and 1, so that p(Y=y|f)=\Phi(yf), see the BernoulliLikelihood) for details on this
             
             #combine the log_prob back into the correct ordered full vector
             return torch.cat(log_prob,-1)

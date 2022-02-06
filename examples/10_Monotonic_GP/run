@@ -1,0 +1,27 @@
+python3 artificial-data-GP.py --n1 200 --save-state state200.pt
+pfile=state200.pt
+
+for n in {2..5}
+do
+n1=$(( 200*n ))
+python3 artificial-data-GP.py --n1 200 --load-state $pfile --save-state state$n1.pt
+pfile=state$n1.pt
+done
+
+for n in {1..5}
+do
+n1=$(( 200*n ))
+pfile=state$n1.pt
+python3 artificial-data-GP.py --load-state $pfile --eval
+mv test.png $n1.png
+done
+
+n1=1000
+pfile=state$n1.pt
+for s in 1e-11 1e-10 1e-09 1e-08 5e-08 1e-07
+do
+python3 artificial-data-GP.py --load-state $pfile --n2 500 --nu 10000 --alpha $s --save-state state$n1-$s.pt --eval 
+pfile=state$n1-$s.pt
+mv test.png $n1-$s.png
+done
+

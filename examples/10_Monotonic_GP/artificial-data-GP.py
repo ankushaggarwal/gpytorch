@@ -22,6 +22,8 @@ parser.add_argument("--small-slope", dest="small_slope",type=float,default=0.,
                   help="allow allowable small negative slope upto a value of M", metavar="M")
 parser.add_argument("--alpha", dest="alpha",type=float,default=1.,
                   help="Multiply the log probability of Burnouille likelihood by M to regularize the problem", metavar="M")
+parser.add_argument("--save-spline", action="store_true", default=False,
+                  help="evaluate the model and save as splines")
 
 args = parser.parse_args()
 
@@ -266,7 +268,7 @@ if args.n2 is not None:
     print('Using a value of small slope=',combined_likelihood2.small_slope[0].item(),' for enforcing monotonicity')
     print('Using a value of alpha=',combined_likelihood2.alpha[0].item(),' for enforcing monotonicity')
     for g in optimizer.param_groups:
-        g['lr'] = 0.0001
+        g['lr'] = 0.01
     for i in range(training_iter):
         optimizer.zero_grad()
         output = model(train_x_full,x_index=train_index_full)
@@ -517,3 +519,29 @@ if args.eval:
 
     ################ Save ##############
     plt.savefig('test.png',bbox_inches='tight')
+
+    if args.save_spline:
+        from scipy.interpolate import RectBivariateSpline
+        print('Calculating eigendecomposition of the covariance matrix')
+        u,v = torch.linalg.eigh(predictions.covariance_matrix)
+        print('Eigendecomposition calculated. Saving as splines')
+        imp_modes = u/torch.norm(u)>0.01
+        imp_eigvals = u[imp_modes].detach().numpy()
+        n_modes = len(imp_eigvals)
+        imp_vecs = v[imp_modes].detach().numpy()
+        x = np.linspace(0, torch.max(train_x[:,0]), n1) + 3
+        y = np.linspace(torch.min(train_x[:,1]), torch.max(train_x[:,1]), n2) + 1
+        z = Wp.reshape(n1,n2)
+        mean_sp = RectBivariateSpline(x,y,z,s=0)
+        eig_sps = []
+        for i in range(n_modes):
+            eig_sps.append(RectBivariateSpline(x,y,z+imp_vecs[i,::5].reshape(n1,n2)*np.sqrt(n_modes*imp_eigvals[i]),s=0))
+            eig_sps.append(RectBivariateSpline(x,y,z-imp_vecs[i,::5].reshape(n1,n2)*np.sqrt(n_modes*imp_eigvals[i]),s=0))
+        import pickle
+        ff = open('splines.p','wb')
+        pickle.dump(x,ff)
+        pickle.dump(y,ff)
+        pickle.dump(mean_sp,ff)
+        pickle.dump(imp_eigvals,ff)
+        pickle.dump(eig_sps,ff)
+        ff.close()

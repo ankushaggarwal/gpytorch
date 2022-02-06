@@ -20,6 +20,8 @@ parser.add_argument("--nu", dest="nu",type=float,default=1.,
                   help="set the monotonicity constraint = NU", metavar="NU")
 parser.add_argument("--small-slope", dest="small_slope",type=float,default=0.,
                   help="allow allowable small negative slope upto a value of M", metavar="M")
+parser.add_argument("--alpha", dest="alpha",type=float,default=1.,
+                  help="Multiply the log probability of Burnouille likelihood by M to regularize the problem", metavar="M")
 
 args = parser.parse_args()
 
@@ -259,8 +261,10 @@ if args.n2 is not None:
     #increase the nu and train again with a lower learning rate
     combined_likelihood2.nu = torch.Tensor([args.nu])
     combined_likelihood2.small_slope = torch.Tensor([args.small_slope])
+    combined_likelihood2.alpha = torch.Tensor([args.alpha])
     print('Using a value of nu=',combined_likelihood2.nu[0].item(),' for enforcing monotonicity')
     print('Using a value of small slope=',combined_likelihood2.small_slope[0].item(),' for enforcing monotonicity')
+    print('Using a value of alpha=',combined_likelihood2.alpha[0].item(),' for enforcing monotonicity')
     for g in optimizer.param_groups:
         g['lr'] = 0.0001
     for i in range(training_iter):

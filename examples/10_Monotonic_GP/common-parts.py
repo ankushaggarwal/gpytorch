@@ -318,18 +318,18 @@ def save_spline():
     imp_eigvals = u[imp_modes].detach().numpy()
     n_modes = len(imp_eigvals)
     imp_vecs = v[imp_modes].detach().numpy()
-    x = x.detach().numpy() + 3
-    y = y.detach().numpy() + 1
+    x2 = x.detach().numpy() + 3
+    y2 = y.detach().numpy() + 1
     z = Wp.reshape(n2,n1).T
-    mean_sp = RectBivariateSpline(x,y,z,s=0)
+    mean_sp = RectBivariateSpline(x2,y2,z,s=0)
     eig_sps = []
     for i in range(n_modes):
-        eig_sps.append(RectBivariateSpline(x,y,z+imp_vecs[i,::5].reshape(n2,n1).T*np.sqrt(n_modes*imp_eigvals[i]),s=0))
-        eig_sps.append(RectBivariateSpline(x,y,z-imp_vecs[i,::5].reshape(n2,n1).T*np.sqrt(n_modes*imp_eigvals[i]),s=0))
+        eig_sps.append(RectBivariateSpline(x2,y2,z+imp_vecs[i,::5].reshape(n2,n1).T*np.sqrt(n_modes*imp_eigvals[i]),s=0))
+        eig_sps.append(RectBivariateSpline(x2,y2,z-imp_vecs[i,::5].reshape(n2,n1).T*np.sqrt(n_modes*imp_eigvals[i]),s=0))
     import pickle
     ff = open('splines.p','wb')
-    pickle.dump(x,ff)
-    pickle.dump(y,ff)
+    pickle.dump(x2,ff)
+    pickle.dump(y2,ff)
     pickle.dump(mean_sp,ff)
     pickle.dump(imp_eigvals,ff)
     pickle.dump(eig_sps,ff)

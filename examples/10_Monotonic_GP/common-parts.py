@@ -317,7 +317,7 @@ def save_spline():
     imp_modes = u/torch.norm(u)>0.01
     imp_eigvals = u[imp_modes].detach().numpy()
     n_modes = len(imp_eigvals)
-    imp_vecs = v[imp_modes].detach().numpy()
+    imp_vecs = v[:,imp_modes].detach().numpy()
     x2 = x.detach().numpy() + 3
     y2 = y.detach().numpy() + 1
     z = Wp.reshape(n2,n1).T

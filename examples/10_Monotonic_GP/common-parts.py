@@ -89,7 +89,7 @@ def partial_derivs_direct(invs):
             res[i,1] += dI4 if dI4 is not None else 0
     return res
 
-def stress_from_inv(dWdI1,dWdI4):
+def stress_from_inv(dWdI1,dWdI4,stretches): #returns Cauchy stress
     n = len(dWdI1)
     S = []
     M = np.array([1.,0.,0.])
@@ -100,7 +100,7 @@ def stress_from_inv(dWdI1,dWdI4):
         S += [s[0,0],s[1,1]]
     return S
 
-def plot_all():
+def plot_all(fname='test.png'):
     ################# Plotting to compare ##################
     from matplotlib import pyplot as plt
     from matplotlib import rcParams,cm
@@ -307,8 +307,213 @@ def plot_all():
     cbar.ax.tick_params(direction='out')
 
     ################ Save ##############
-    plt.savefig('test.png',bbox_inches='tight')
+    plt.savefig(fname,bbox_inches='tight')
 
+def plot_all2(fname='test.png'):
+    ################# Plotting to compare ##################
+    from matplotlib import pyplot as plt
+    from matplotlib import rcParams,cm
+    from matplotlib.ticker import MultipleLocator, LogLocator
+
+    ftsize = 12
+    height=2.9 #in inches
+    plotParams = {
+        # 'backend'           : 'ps',
+        'font.family'       : 'serif',
+        'font.serif'        : 'Times New Roman',
+        'font.size'         : ftsize,
+        'axes.labelsize'    : ftsize,
+        'legend.fontsize'   : ftsize,
+        'xtick.labelsize'   : ftsize-1,
+        'ytick.labelsize'   : ftsize-1,
+        'lines.markersize'  : 3,
+        'lines.linewidth'   : 1,
+        'axes.linewidth'    : 1,
+        'lines.antialiased' : True,
+        'font.size'     : ftsize,
+        'text.usetex'       : False,
+        'figure.figsize'    : [height*0.8*4, height*2],
+        'legend.frameon'    : True,
+    }
+    rcParams.update(plotParams)
+
+    fig = plt.figure()
+    CMAP=cm.get_cmap("plasma").copy()
+    errorMap=cm.get_cmap("magma_r").copy()
+
+    x0,y0,x1,y1 = 0.05,0.5,0.2,0.4
+    dx,dy = x1+0.0525,-(y1+0.0725)
+
+    ################ dWdI1 ##############
+    ax = fig.add_axes([x0,y0,x1,y1])
+    data = dWdI1p
+    V=np.linspace(np.min(data),np.max(data),256)
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='max')
+    CS.cmap.set_over('white')
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+        c.set_edgecolor("face")
+    ax.plot(invs[:,0],invs[:,1],'o',markersize=1,color='black')
+
+    ax.set_xlabel(r'$I_1$')
+    ax.set_ylabel(r'$I_4$')
+    ax.set_title('Predicted mean')
+
+    cbaxes = fig.add_axes([x0+dx,y0,0.015,y1])
+    cbar = plt.colorbar(CS,cax=cbaxes)
+    cbar.ax.set_ylabel(r'$dW/dI_1$')
+    cbar.ax.tick_params(direction='out')
+
+    ################ dWdI4 ##############
+    ax = fig.add_axes([x0+2*dx,y0,x1,y1])
+    data = dWdI4p
+    V=np.linspace(np.min(data),np.max(data),256)
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='max')
+    CS.cmap.set_over('white')
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+        c.set_edgecolor("face")
+    ax.plot(invs[:,0],invs[:,1],'o',markersize=1,color='black')
+
+    ax.set_xlabel(r'$I_1$')
+    ax.set_ylabel(r'$I_4$')
+    ax.set_title('Predicted mean')
+
+    cbaxes = fig.add_axes([x0+3*dx,y0,0.015,y1])
+    cbar = plt.colorbar(CS,cax=cbaxes)
+    cbar.ax.set_ylabel(r'$dW/dI_4$')
+    cbar.ax.tick_params(direction='out')
+
+    ################ d2W ##############
+    from matplotlib.colors import TwoSlopeNorm
+    ax = fig.add_axes([x0+0.*dx,y0+1.2*dy,x1,y1])
+    data = dW2dI1p
+    V=np.linspace(np.min(data),np.max(data),256)
+    #V=np.linspace(-150,50,256)
+    #CMAP=cm.get_cmap("plasma_r").copy()
+    #CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap='seismic_r',norm=TwoSlopeNorm(0))
+    #CS.cmap.set_under('white')
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+        c.set_edgecolor("face")
+    ax.set_xlabel(r'$I_1$')
+    ax.set_ylabel(r'$I_4$')
+    ax.set_title(r'$d^2W/dI_1^2$')
+
+    cbaxes = fig.add_axes([x0+1.*dx,y0+1.2*dy,0.015,y1])
+    cbar = plt.colorbar(CS,cax=cbaxes)
+    cbar.ax.set_ylabel(r'$d^2W/dI_1^2$')
+    cbar.ax.tick_params(direction='out')
+
+    ax = fig.add_axes([x0+2*dx,y0+1.2*dy,x1,y1])
+    data = dW2dI4p
+    V=np.linspace(np.min(data),np.max(data),256)
+    #V=np.linspace(-150,50,256)
+    #CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP,extend='min')
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap='seismic_r',norm=TwoSlopeNorm(0))
+    #CS.cmap.set_under('white')
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+        c.set_edgecolor("face")
+    ax.set_xlabel(r'$I_1$')
+    ax.set_ylabel(r'$I_4$')
+    ax.set_title(r'$d^2W/dI_4^2$')
+
+    cbaxes = fig.add_axes([x0+3*dx,y0+1.2*dy,0.015,y1])
+    cbar = plt.colorbar(CS,cax=cbaxes)
+    cbar.ax.set_ylabel(r'$d^2W/dI_4^2$')
+    cbar.ax.tick_params(direction='out')
+
+    ################ dW stddev ##############
+    ax = fig.add_axes([x0+0.*dx,y0+2.4*dy,x1,y1])
+    data = std_var[1::5]
+    V=np.linspace(np.min(data),np.max(data),256)
+    CMAP=cm.get_cmap("plasma_r").copy()
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP)
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+        c.set_edgecolor("face")
+    ax.plot(invs[:,0],invs[:,1],'o',markersize=1,color='black')
+    ax.set_xlabel(r'$I_1$')
+    ax.set_ylabel(r'$I_4$')
+    ax.set_title(r'$dW/dI_1$ std dev')
+
+    cbaxes = fig.add_axes([x0+1.*dx,y0+2.4*dy,0.015,y1])
+    cbar = plt.colorbar(CS,cax=cbaxes)
+    cbar.ax.set_ylabel(r'$dW/dI_1$ std dev')
+    cbar.ax.tick_params(direction='out')
+
+    ax = fig.add_axes([x0+2*dx,y0+2.4*dy,x1,y1])
+    data = std_var[2::5]
+    V=np.linspace(np.min(data),np.max(data),256)
+    CS = ax.contourf(xv+3,yv+1,data.reshape(xv.shape),V,cmap=CMAP)
+    # This is the fix for the white lines between contour levels
+    for c in CS.collections:
+        c.set_edgecolor("face")
+    ax.plot(invs[:,0],invs[:,1],'o',markersize=1,color='black')
+    ax.set_xlabel(r'$I_1$')
+    ax.set_ylabel(r'$I_4$')
+    ax.set_title(r'$dW/dI_4$ std dev')
+
+    cbaxes = fig.add_axes([x0+3*dx,y0+2.4*dy,0.015,y1])
+    cbar = plt.colorbar(CS,cax=cbaxes)
+    cbar.ax.set_ylabel(r'$dW/dI_4$ std dev')
+    cbar.ax.tick_params(direction='out')
+
+    ################ Save ##############
+    plt.savefig(fname,bbox_inches='tight')
+
+def plot_all3(fname='test2.png'):
+    ################# Plotting to compare ##################
+    from matplotlib import pyplot as plt
+    from matplotlib import rcParams,cm
+    from matplotlib.ticker import MultipleLocator, LogLocator
+    from scipy.interpolate import interp1d
+
+    ftsize = 12
+    height=2.9 #in inches
+    plotParams = {
+        # 'backend'           : 'ps',
+        'font.family'       : 'serif',
+        'font.serif'        : 'Times New Roman',
+        'font.size'         : ftsize,
+        'axes.labelsize'    : ftsize,
+        'legend.fontsize'   : ftsize,
+        'xtick.labelsize'   : ftsize-1,
+        'ytick.labelsize'   : ftsize-1,
+        'lines.markersize'  : 3,
+        'lines.linewidth'   : 1,
+        'axes.linewidth'    : 1,
+        'lines.antialiased' : True,
+        'font.size'     : ftsize,
+        'text.usetex'       : False,
+        'figure.figsize'    : [height*0.8*4, height*2],
+        'legend.frameon'    : True,
+    }
+    rcParams.update(plotParams)
+    fig, axs = plt.subplots(2,len(unique_protocols),figsize=(height*0.8*len(unique_protocols), height*2))
+    for i,p in enumerate(unique_protocols):
+        color=next(axs[0,0]._get_lines.prop_cycler)['color']
+        subset = protocols==p
+        axs[0,i].plot(stretches[subset,0],stresses[subset,0],'o',color=color)
+        axs[0,i].plot(stretches[subset,0],stressesp[subset,0],'-',color=color)
+        x = stretches[subset,0]
+        x2 = np.linspace(x.min(),x.max(),100)
+        y1 = stressesp_plus[subset,0]
+        y2 = stressesp_minus[subset,0]
+        axs[0,i].fill_between(x2,interp1d(x,y1)(x2),interp1d(x,y2)(x2),alpha=0.2)
+        axs[1,i].plot(stretches[subset,1],stresses[subset,1],'o',color=color)
+        axs[1,i].plot(stretches[subset,1],stressesp[subset,1],'-',color=color)
+        x = stretches[subset,1]
+        x2 = np.linspace(x.min(),x.max(),100)
+        y1 = stressesp_plus[subset,1]
+        y2 = stressesp_minus[subset,1]
+        axs[1,i].fill_between(x2,interp1d(x,y1)(x2),interp1d(x,y2)(x2),alpha=0.2)
+    ################ Save ##############
+    plt.savefig(fname,bbox_inches='tight')
+
+    
 def save_spline():
     from scipy.interpolate import RectBivariateSpline
     print('Calculating eigendecomposition of the covariance matrix')
@@ -317,20 +522,20 @@ def save_spline():
     imp_modes = u/torch.norm(u)>0.01
     imp_eigvals = u[imp_modes].detach().numpy()
     n_modes = len(imp_eigvals)
-    imp_vecs = v[imp_modes].detach().numpy()
-    x = x.detach().numpy() + 3
-    y = y.detach().numpy() + 1
+    imp_vecs = v[:,imp_modes].detach().numpy()
+    x2 = x.detach().numpy() + 3
+    y2 = y.detach().numpy() + 1
     z = Wp.reshape(n2,n1).T
-    mean_sp = RectBivariateSpline(x,y,z,s=0)
+    mean_sp = RectBivariateSpline(x2,y2,z,s=0)
     eig_sps = []
     for i in range(n_modes):
-        eig_sps.append(RectBivariateSpline(x,y,z+imp_vecs[i,::5].reshape(n2,n1).T*np.sqrt(n_modes*imp_eigvals[i]),s=0))
-        eig_sps.append(RectBivariateSpline(x,y,z-imp_vecs[i,::5].reshape(n2,n1).T*np.sqrt(n_modes*imp_eigvals[i]),s=0))
+        eig_sps.append(RectBivariateSpline(x2,y2,imp_vecs[::5,i].reshape(n2,n1).T,s=0))
+        #eig_sps.append(RectBivariateSpline(x2,y2,z-imp_vecs[i,::5].reshape(n2,n1).T*np.sqrt(n_modes*imp_eigvals[i]),s=0))
     import pickle
     ff = open('splines.p','wb')
-    pickle.dump(x,ff)
-    pickle.dump(y,ff)
+    pickle.dump(x2,ff)
+    pickle.dump(y2,ff)
     pickle.dump(mean_sp,ff)
-    pickle.dump(imp_eigvals,ff)
+    pickle.dump(u.detach().numpy(),ff)
     pickle.dump(eig_sps,ff)
     ff.close()

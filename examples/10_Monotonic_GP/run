@@ -25,3 +25,4 @@ pfile=state$n1-$s.pt
 mv test.png $n1-$s.png
 done
 
+python3 artificial-data-GP.py --load-state $pfile --eval --save-spline

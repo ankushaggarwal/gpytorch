@@ -194,7 +194,9 @@ if args.eval:
     likelihood.eval()
 
     n1, n2 = 50, 50
-    xv, yv = torch.meshgrid(torch.linspace(-0.1, torch.max(train_x[:,0]), n1), torch.linspace(torch.min(train_x[:,1])-0.1, torch.max(train_x[:,1]), n2),indexing='xy')
+    x, y = torch.linspace(torch.min(train_x_full[:,0]), torch.max(train_x_full[:,0]), n1), torch.linspace(torch.min(train_x_full[:,1]), torch.max(train_x_full[:,1]), n2)
+    xv, yv = torch.meshgrid(x, y,indexing='xy')
+    #xv, yv = torch.meshgrid(torch.linspace(-0.1, torch.max(train_x[:,0]), n1), torch.linspace(torch.min(train_x[:,1])-0.1, torch.max(train_x[:,1]), n2),indexing='xy')
     test_x = torch.stack([xv.reshape(n1*n2, 1), yv.reshape(n1*n2, 1)], -1).squeeze(1)
     test_index = torch.ones(n1*n2,2*ndim+1,dtype=bool)
     predictions = model(test_x,x_index = test_index)

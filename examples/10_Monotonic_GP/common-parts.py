@@ -496,12 +496,14 @@ def plot_all3(fname='test2.png'):
     for i,p in enumerate(unique_protocols):
         color=next(axs[0,0]._get_lines.prop_cycler)['color']
         subset = protocols==p
-        axs[0,i].plot(stretches[subset,0],stresses[subset,0],'o',color=color)
-        axs[0,i].plot(stretches[subset,0],stressesp[subset,0],'-',color=color)
         x = stretches[subset,0]
+        if x.max()/x.min()<1.01: #if the stretch in x direction is constant
+            x = stretches[subset,1]
         x2 = np.linspace(x.min(),x.max(),100)
         y1 = stressesp_plus[subset,0]
         y2 = stressesp_minus[subset,0]
+        axs[0,i].plot(x,stresses[subset,0],'o',color=color)
+        axs[0,i].plot(x,stressesp[subset,0],'-',color=color)
         axs[0,i].fill_between(x2,interp1d(x,y1)(x2),interp1d(x,y2)(x2),alpha=0.2)
         axs[1,i].plot(stretches[subset,1],stresses[subset,1],'o',color=color)
         axs[1,i].plot(stretches[subset,1],stressesp[subset,1],'-',color=color)

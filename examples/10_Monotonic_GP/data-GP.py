@@ -207,16 +207,16 @@ if args.eval:
     plot_all3('test2.png')
 
     #predict rest of the protocols
-    subset = (df['Protocol']>=8) & (df['L/U']==1)
+    subset = (df['Protocol'].isin (np.arange(8,14))) & (df['L/U']==1)
     df1 = df[subset]
-    df2 = df1[(df1['Applied']['P11']>0) & (df1['Applied']['P22']>0)]
+    df2 = df1[(df1['Applied']['P11']!=0) & (df1['Applied']['P22']!=0)]
     l1,l2 = df2['Tine']['λ_1'].to_numpy(), df2['Tine']['λ_2'].to_numpy()
     P1,P2 = df2['Applied']['P11'].to_numpy(), df2['Applied']['P22'].to_numpy()
     stretches = np.vstack((l1,l2)).T
     stresses = np.vstack((P1*l1,P2*l2)).T
 
     invs = invariants(stretches)
-    dWdI1,dWdI4 = partial_derivs(stresses,stretches)
+    #dWdI1,dWdI4 = partial_derivs(stresses,stretches)
 
     test_x2 = invs.copy() 
     test_x2[:,0] -= 3.
@@ -238,6 +238,38 @@ if args.eval:
     protocols = df2['Protocol'].to_numpy()
     unique_protocols = set(protocols)
     plot_all3('test3.png')
+
+    subset = (df['Protocol']>=14) & (df['L/U']==1)
+    df1 = df[subset]
+    df2 = df1[(df1['Applied']['P11']!=0) & (df1['Applied']['P22']!=0)]
+    l1,l2 = df2['Tine']['λ_1'].to_numpy(), df2['Tine']['λ_2'].to_numpy()
+    P1,P2 = df2['Applied']['P11'].to_numpy(), df2['Applied']['P22'].to_numpy()
+    stretches = np.vstack((l1,l2)).T
+    stresses = np.vstack((P1*l1,P2*l2)).T
+
+    invs = invariants(stretches)
+    #dWdI1,dWdI4 = partial_derivs(stresses,stretches)
+
+    test_x2 = invs.copy() 
+    test_x2[:,0] -= 3.
+    test_x2[:,1] -= 1.
+    test_x2 = torch.from_numpy(test_x2).float()
+    ndata,ndim = test_x2.shape
+    test_index2 = torch.zeros(ndata,2*ndim+1,dtype=bool)
+    test_index2[:,1]=True
+    test_index2[:,2]=True
+    predictions2 = model(test_x2,x_index = test_index2)
+    means2 = predictions2.mean.detach().numpy()
+    std_var2 = predictions2.stddev.detach().numpy()
+    dWdI1p2 = means2[::2]
+    dWdI4p2 = means2[1::2]
+    stressesp = np.array(stress_from_inv(dWdI1p2,dWdI4p2,stretches)).reshape(stresses.shape)
+    stressesp_plus = np.array(stress_from_inv(dWdI1p2+std_var2[::2],dWdI4p2+std_var2[1::2],stretches)).reshape(stresses.shape)
+    stressesp_minus = np.array(stress_from_inv(dWdI1p2-std_var2[::2],dWdI4p2-std_var2[1::2],stretches)).reshape(stresses.shape)
+
+    protocols = df2['Protocol'].to_numpy()
+    unique_protocols = set(protocols)
+    plot_all3('test4.png')
 
     if args.save_spline:
         save_spline()

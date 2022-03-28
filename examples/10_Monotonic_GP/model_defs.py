@@ -95,7 +95,7 @@ class GPModel(ApproximateGP):
         super(GPModel, self).__init__(variational_strategy)
         if deriv==2:
             self.mean_module = gpytorch.means.LinearMeanGradGrad(ndim,bias=False)
-            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad())
+            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad(ard_num_dims=ndim))
         elif deriv==1:
             self.mean_module = gpytorch.means.LinearMeanGrad(ndim,bias=False)
             self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGrad())

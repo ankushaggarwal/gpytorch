@@ -72,6 +72,83 @@ class CompositeLikelihood(gpytorch.likelihoods._OneDimensionalLikelihood):
         log_prob = self.quadrature(log_prob_lambda, function_dist)
         return log_prob
 
+###############################################################################
+################################  Likelihood ##################################
+###############################################################################
+
+class CompositeLikelihoodStress(gpytorch.likelihoods._OneDimensionalLikelihood):
+    def __init__(self,likelihoods_list,indices,stretches):
+        super().__init__()
+        self.likelihoods_list = likelihoods_list
+        self.indices = indices
+        self.register_buffer('nu',torch.Tensor([1.]))
+        #self.nu = torch.nn.parameter.Parameter(torch.Tensor([1.]),requires_grad=False) #1.
+        self.register_buffer('small_slope',torch.Tensor([0.]))
+        self.register_buffer('alpha',torch.Tensor([1.]))
+        #self.small_slope = torch.nn.parameter.Parameter(torch.Tensor([0.]),requires_grad=False) #0.
+        try:
+            self.stretches = torch.from_numpy(stretches)
+        except:
+            self.stretches = stretches
+        assert(torch.sum(indices[:,1]==True) == len(stretches[:,0]))
+        assert(torch.sum(indices[:,1]==True) == len(stretches[:,1]))
+
+    def set_indices(indices):
+        self.indices = indices
+
+    def forward(self,function_samples,**kwargs):
+        #this does not work, but if expected_log_prob is implemented, this is not called for ELBO
+        for i,l in enumerate(self.likelihoods_list):
+            if i==0:
+                p = l.forward(function_samples)
+            else:
+                p = torch.multiply(p,l.forward(function_samples))
+        return p
+
+    def split(self, full_y):
+        y = []
+        temp = torch.zeros_like(self.indices)
+        #print(full_y)
+        for i in range(self.indices.shape[-1]):
+            temp[:,i] = self.indices[:,i]
+            y.append(full_y[...,temp[self.indices]])
+            temp[:,i] = False
+        return y
+    
+    def stress_from_deriv(self,dW1,dW4):
+        l1 = self.stretches[:,0]
+        l2 = self.stretches[:,1]
+        len(l1)
+        len(l2)
+        Pxx = 2*dW1*(l1-1./l1**3/l2**2) + 2*dW4*l1
+        Pyy = 2*dW1*(l2-1./l1**2/l2**3)
+        return Pxx,Pyy
+
+    def expected_log_prob(self,observations, function_dist, *params,**kwargs):
+        #split observations into a list of different parts observ[i]
+        observ = self.split(observations)
+        
+        def log_prob_lambda(function_samples):
+            #for the log_prob_lambda function, which takes function_samples as input
+            #split the function_samples into a list of different parts f_samples[i]
+            f_samples = self.split(function_samples)
+            #convert derivatives to stresses -- not a general approach -- TODO make it general??
+            f_samples[1],f_samples[2] = self.stress_from_deriv(f_samples[1],f_samples[2])
+
+            log_prob = []
+            for i,l in enumerate(self.likelihoods_list):
+                if isinstance(l,gpytorch.likelihoods.GaussianLikelihood):
+                    log_prob.append(l(f_samples[i]).log_prob(observ[i]))
+                elif isinstance(l,gpytorch.likelihoods.BernoulliLikelihood):
+                    log_prob.append(self.alpha[0]*gpytorch.functions.log_normal_cdf(f_samples[i].add(self.small_slope[0]).mul(observ[i].mul(2).sub(1)).mul(self.nu[0]))) #.mul(2).sub(1) changes the Bernoulli observations to -1 and 1, so that p(Y=y|f)=\Phi(yf), see the BernoulliLikelihood) for details on this
+            
+            #combine the log_prob back into the correct ordered full vector
+            return torch.cat(log_prob,-1)
+
+        log_prob = self.quadrature(log_prob_lambda, function_dist)
+        return log_prob
+
+
 #################################################################################
 ##################################### GP Model  #################################
 #################################################################################
@@ -95,7 +172,8 @@ class GPModel(ApproximateGP):
         super(GPModel, self).__init__(variational_strategy)
         if deriv==2:
             self.mean_module = gpytorch.means.LinearMeanGradGrad(ndim,bias=False)
-            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad(ard_num_dims=ndim))
+            #self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad(ard_num_dims=ndim))
+            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad())
         elif deriv==1:
             self.mean_module = gpytorch.means.LinearMeanGrad(ndim,bias=False)
             self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGrad())

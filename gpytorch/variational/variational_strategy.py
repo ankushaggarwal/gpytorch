@@ -205,10 +205,11 @@ class VariationalStrategy2(_VariationalStrategy):
         self.inducing_index = inducing_index
         self.register_buffer("updated_strategy", torch.tensor(True))
         self._register_load_state_dict_pre_hook(_ensure_updated_strategy_flag_set)
+        self.max_tries = 3
 
     @cached(name="cholesky_factor", ignore_args=True)
     def _cholesky_factor(self, induc_induc_covar):
-        L = psd_safe_cholesky(delazify(induc_induc_covar).double())
+        L = psd_safe_cholesky(delazify(induc_induc_covar).double(),max_tries=self.max_tries)
         return TriangularLazyTensor(L)
 
     @property

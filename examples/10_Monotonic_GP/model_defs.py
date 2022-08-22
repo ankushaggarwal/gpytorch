@@ -154,7 +154,7 @@ class CompositeLikelihoodStress(gpytorch.likelihoods._OneDimensionalLikelihood):
 #################################################################################
 
 class GPModel(ApproximateGP):
-    def __init__(self,n_inducing_points,ndim,lower_limits,upper_limits,deriv=2):
+    def __init__(self,n_inducing_points,ndim,lower_limits,upper_limits,deriv=2,aniso=False):
         #n_inducing_points = 200
         if deriv<1 or deriv>2:
             raise ValueError("deriv argument can only be either 1 or 2")
@@ -172,8 +172,10 @@ class GPModel(ApproximateGP):
         super(GPModel, self).__init__(variational_strategy)
         if deriv==2:
             self.mean_module = gpytorch.means.LinearMeanGradGrad(ndim,bias=False)
-            #self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad(ard_num_dims=ndim))
-            self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad())
+            if aniso:
+                self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad(ard_num_dims=ndim))
+            else:
+                self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGradGrad())
         elif deriv==1:
             self.mean_module = gpytorch.means.LinearMeanGrad(ndim,bias=False)
             self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernelGrad())
